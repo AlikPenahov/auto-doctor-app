@@ -38,8 +38,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const HomeScreen(),
     const ElmScannerScreen(),
+    const AiDoctorScreen(), // AI Diagnostic Assistant
     const DtcLookupScreen(),
-    const Center(child: Text('Settings & Configuration', style: TextStyle(color: Colors.white, fontSize: 18))),
   ];
 
   @override
@@ -67,14 +67,14 @@ class _MainScreenState extends State<MainScreen> {
             label: 'Scanner',
           ),
           NavigationDestination(
-            icon: Icon(Icons.build_outlined),
-            selectedIcon: Icon(Icons.build, color: Color(0xFF42A5F5)),
-            label: 'DTC Lookup',
+            icon: Icon(Icons.psychology_outlined),
+            selectedIcon: Icon(Icons.psychology, color: Color(0xFF42A5F5)),
+            label: 'AI Doctor',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: Color(0xFF42A5F5)),
-            label: 'Settings',
+            icon: Icon(Icons.build_outlined),
+            selectedIcon: Icon(Icons.build, color: Color(0xFF42A5F5)),
+            label: 'DTC Database',
           ),
         ],
       ),
@@ -138,9 +138,9 @@ class HomeScreen extends StatelessWidget {
                         decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
                         child: const Row(
                           children: [
-                            Icon(Icons.directions_car, color: Colors.white, size: 16),
+                            Icon(Icons.psychology, color: Colors.white, size: 16),
                             SizedBox(width: 6),
-                            Text('Active System', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                            Text('AI Diagnostics Powered', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -148,14 +148,14 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('Vehicle Health: Good', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Vehicle Status: Ready for Scan', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  const Text('Engine & EVAP diagnostics operating within normal parameters.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  const Text('Ask AI Doctor to diagnose DTC fault codes or unusual engine symptoms.', style: TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {},
-                    icon: const Icon(Icons.search, size: 18),
-                    label: const Text('Start Full Scan'),
+                    icon: const Icon(Icons.auto_awesome, size: 18),
+                    label: const Text('Consult AI Doctor'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF1565C0),
@@ -177,9 +177,9 @@ class HomeScreen extends StatelessWidget {
               childAspectRatio: 1.3,
               children: [
                 _buildActionCard(icon: Icons.qr_code_scanner, title: 'OBD-II Scan', subtitle: 'Read Diagnostic Codes', color: Colors.orangeAccent),
-                _buildActionCard(icon: Icons.auto_graph, title: 'Live Data', subtitle: 'MAF, Voltage, Fuel Trim', color: Colors.lightBlueAccent),
+                _buildActionCard(icon: Icons.auto_graph, title: 'Live Telemetry', subtitle: 'MAF, Voltage, Fuel Trim', color: Colors.lightBlueAccent),
+                _buildActionCard(icon: Icons.psychology, title: 'AI Assistant', subtitle: 'Smart Repair Guidance', color: Colors.purpleAccent),
                 _buildActionCard(icon: Icons.history, title: 'Scan Logs', subtitle: 'Previous Reports', color: Colors.greenAccent),
-                _buildActionCard(icon: Icons.build_circle_outlined, title: 'Cross Parts', subtitle: 'OEM Part Compatibility', color: Colors.purpleAccent),
               ],
             ),
           ],
@@ -205,6 +205,151 @@ class HomeScreen extends StatelessWidget {
           Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 2),
           Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+}
+
+// AI Doctor Screen
+class AiDoctorScreen extends StatefulWidget {
+  const AiDoctorScreen({super.key});
+
+  @override
+  State<AiDoctorScreen> createState() => _AiDoctorScreenState();
+}
+
+class _AiDoctorScreenState extends State<AiDoctorScreen> {
+  final TextEditingController _messageController = TextEditingController();
+  final List<Map<String, String>> _messages = [
+    {
+      'sender': 'ai',
+      'text': 'Hello! I am your AI Auto Doctor. Mention any DTC codes (e.g. P1101, P0446) or describe engine symptoms for an instant diagnosis.'
+    }
+  ];
+
+  void _sendMessage() {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add({'sender': 'user', 'text': text});
+      _messageController.clear();
+    });
+
+    // Simulate AI Diagnosis Response
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        String response = "I've analyzed your input. ";
+        final upper = text.toUpperCase();
+
+        if (upper.contains('P1101')) {
+          response += "Code P1101 indicates Mass Air Flow (MAF) sensor intake airflow range error. "
+              "\n\n🛠 Recommended Actions:"
+              "\n1. Inspect MAF sensor for dust or oil contamination; clean using CRC MAF Cleaner."
+              "\n2. Check intake duct hose for unmetered vacuum leaks."
+              "\n3. Inspect air filter element and throttle body carbon buildup.";
+        } else if (upper.contains('P0446')) {
+          response += "Code P0446 indicates EVAP Vent Solenoid Valve Control Circuit error."
+              "\n\n🛠 Recommended Actions:"
+              "\n1. Check EVAP vent valve wiring and connector pins."
+              "\n2. Verify charcoal canister for restriction."
+              "\n3. Test vent solenoid coil resistance.";
+        } else if (upper.contains('P3055') || upper.contains('P3056')) {
+          response += "Code $upper relates to DC/DC Converter output voltage/current variance."
+              "\n\n🛠 Recommended Actions:"
+              "\n1. Measure auxiliary battery static and loaded voltage."
+              "\n2. Inspect ground straps and high-current inline fuses.";
+        } else {
+          response += "Based on your description, check air intake flow, fuel delivery pressure, and battery ground connections. Run an OBD-II scan to get specific fault codes.";
+        }
+
+        setState(() {
+          _messages.add({'sender': 'ai', 'text': response});
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF1E1E1E),
+            child: Row(
+              children: const [
+                CircleAvatar(
+                  backgroundColor: Color(0xFF1E88E5),
+                  child: Icon(Icons.psychology, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Auto Doctor AI Assistant', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('Online | Diagnostic Model v2.4', style: TextStyle(color: Colors.greenAccent, fontSize: 11)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                final isUser = msg['sender'] == 'user';
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(14),
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+                    decoration: BoxDecoration(
+                      color: isUser ? const Color(0xFF1E88E5) : const Color(0xFF1E1E1E),
+                      borderRadius: BorderRadius.circular(16),
+                      border: isUser ? null : Border.all(color: Colors.white10),
+                    ),
+                    child: Text(
+                      msg['text']!,
+                      style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(12),
+            color: const Color(0xFF1E1E1E),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Type symptom or code (e.g. P1101)...',
+                      hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                      filled: true,
+                      fillColor: const Color(0xFF121212),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _sendMessage,
+                  icon: const Icon(Icons.send, color: Color(0xFF1E88E5)),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -265,8 +410,6 @@ class _ElmScannerScreenState extends State<ElmScannerScreen> {
             Text(isConnected ? 'Status: Connected to $selectedDevice' : 'Status: Disconnected', 
                 style: TextStyle(color: isConnected ? Colors.greenAccent : Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w500)),
             const SizedBox(height: 16),
-
-            // Scan Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -281,15 +424,11 @@ class _ElmScannerScreenState extends State<ElmScannerScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
             const Text('Discovered Devices', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-
-            // Device list
             _buildDeviceTile("OBDII Bluetooth (ELM327 v1.5)", "00:1D:A5:68:C2:11"),
             _buildDeviceTile("VEEPEAK VP11", "11:22:33:AA:BB:CC"),
             _buildDeviceTile("vLinker MC+", "AA:BB:CC:44:55:66"),
-
             const SizedBox(height: 20),
             if (isConnected) ...[
               const Text('Live Telemetry (ECU Stream)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
