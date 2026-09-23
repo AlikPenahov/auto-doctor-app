@@ -37,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const Center(child: Text('OBD-II Scanner & Live Data', style: TextStyle(color: Colors.white, fontSize: 18))),
+    const ElmScannerScreen(),
     const DtcLookupScreen(),
     const Center(child: Text('Settings & Configuration', style: TextStyle(color: Colors.white, fontSize: 18))),
   ];
@@ -82,6 +82,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
+// Home Screen
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -93,7 +94,6 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -113,8 +113,6 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-
-            // Vehicle Status Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -168,8 +166,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Quick Actions
             const Text('Quick Actions', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             GridView.count(
@@ -185,25 +181,6 @@ class HomeScreen extends StatelessWidget {
                 _buildActionCard(icon: Icons.history, title: 'Scan Logs', subtitle: 'Previous Reports', color: Colors.greenAccent),
                 _buildActionCard(icon: Icons.build_circle_outlined, title: 'Cross Parts', subtitle: 'OEM Part Compatibility', color: Colors.purpleAccent),
               ],
-            ),
-            const SizedBox(height: 24),
-
-            // System Logs
-            const Text('Recent Diagnostics', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  _buildLogItem(title: 'MAF Sensor Stream', status: 'In Range (No P1101)', icon: Icons.verified, color: Colors.green),
-                  const Divider(color: Colors.white10),
-                  _buildLogItem(title: 'EVAP Purge Test', status: 'Passed (No P0446)', icon: Icons.verified, color: Colors.green),
-                ],
-              ),
             ),
           ],
         ),
@@ -232,23 +209,177 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  static Widget _buildLogItem({required String title, required String status, required IconData icon, required Color color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
-                Text(status, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-              ],
+// ELM327 Bluetooth Scanner Screen
+class ElmScannerScreen extends StatefulWidget {
+  const ElmScannerScreen({super.key});
+
+  @override
+  State<ElmScannerScreen> createState() => _ElmScannerScreenState();
+}
+
+class _ElmScannerScreenState extends State<ElmScannerScreen> {
+  bool isScanning = false;
+  bool isConnected = false;
+  String selectedDevice = "No device connected";
+
+  void _startScan() {
+    setState(() {
+      isScanning = true;
+    });
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() {
+          isScanning = false;
+        });
+      }
+    });
+  }
+
+  void _connectDevice(String deviceName) {
+    setState(() {
+      selectedDevice = deviceName;
+      isConnected = true;
+    });
+  }
+
+  void _disconnect() {
+    setState(() {
+      selectedDevice = "No device connected";
+      isConnected = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('ELM327 OBD-II Scanner', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            Text(isConnected ? 'Status: Connected to $selectedDevice' : 'Status: Disconnected', 
+                style: TextStyle(color: isConnected ? Colors.greenAccent : Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 16),
+
+            // Scan Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isScanning ? null : _startScan,
+                icon: isScanning ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.bluetooth_searching),
+                label: Text(isScanning ? 'Scanning Devices...' : 'Scan for OBD-II Bluetooth'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E88E5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
+            const SizedBox(height: 20),
+
+            const Text('Discovered Devices', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+
+            // Device list
+            _buildDeviceTile("OBDII Bluetooth (ELM327 v1.5)", "00:1D:A5:68:C2:11"),
+            _buildDeviceTile("VEEPEAK VP11", "11:22:33:AA:BB:CC"),
+            _buildDeviceTile("vLinker MC+", "AA:BB:CC:44:55:66"),
+
+            const SizedBox(height: 20),
+            if (isConnected) ...[
+              const Text('Live Telemetry (ECU Stream)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Expanded(
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.5,
+                  children: [
+                    _buildGaugeCard("Engine RPM", "780 RPM", Icons.speed, Colors.cyanAccent),
+                    _buildGaugeCard("MAF Airflow", "3.4 g/s", Icons.air, Colors.greenAccent),
+                    _buildGaugeCard("Coolant Temp", "88 °C", Icons.thermostat, Colors.orangeAccent),
+                    _buildGaugeCard("Battery Volt", "14.2 V", Icons.electric_bolt, Colors.amberAccent),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: _disconnect,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent.withOpacity(0.2),
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
+                  minimumSize: const Size(double.infinity, 45),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Disconnect Adapter'),
+              )
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeviceTile(String name, String mac) {
+    bool isThisConnected = isConnected && selectedDevice == name;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: isThisConnected ? Border.all(color: Colors.greenAccent) : null,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
+              Text(mac, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+            ],
           ),
+          ElevatedButton(
+            onPressed: isThisConnected ? null : () => _connectDevice(name),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isThisConnected ? Colors.green : const Color(0xFF2C2C2C),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text(isThisConnected ? 'Connected' : 'Connect', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGaugeCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 6),
+              Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -304,17 +435,6 @@ class _DtcLookupScreenState extends State<DtcLookupScreen> {
       ],
       'severity': 'High',
     },
-    'P3056': {
-      'title': 'DC/DC Converter Output Current Performance',
-      'system': 'Power Distribution System',
-      'desc': 'The output current feedback sensor signal for the DC/DC converter module is out of specification.',
-      'causes': [
-        'Current sensor degradation',
-        'Short circuit in primary power distribution rail',
-        'Main battery voltage collapse under load'
-      ],
-      'severity': 'High',
-    },
   };
 
   void _searchCode(String code) {
@@ -328,7 +448,7 @@ class _DtcLookupScreenState extends State<DtcLookupScreen> {
           'code': cleanCode,
           'title': 'Custom Code / Not In Standard Database',
           'system': 'General OBD-II',
-          'desc': 'This DTC code is not present in the local offline database. Connect AI Diagnostic Agent or OEM database to analyze.',
+          'desc': 'This DTC code is not present in the local offline database.',
           'causes': ['Manufacturer specific code or unlisted DTC.'],
           'severity': 'Unknown',
         };
@@ -377,25 +497,6 @@ class _DtcLookupScreenState extends State<DtcLookupScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: ['P0446', 'P1101', 'P3055', 'P3056'].map((code) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ActionChip(
-                      label: Text(code, style: const TextStyle(color: Colors.white)),
-                      backgroundColor: const Color(0xFF2C2C2C),
-                      onPressed: () {
-                        _searchController.text = code;
-                        _searchCode(code);
-                      },
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
             const SizedBox(height: 20),
             if (_selectedCodeData != null) ...[
               Expanded(
@@ -430,7 +531,7 @@ class _DtcLookupScreenState extends State<DtcLookupScreen> {
                         const SizedBox(height: 4),
                         Text(_selectedCodeData!['desc'], style: const TextStyle(color: Colors.white70, fontSize: 13)),
                         const SizedBox(height: 16),
-                        const Text('Possible Causes & Symptoms:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        const Text('Possible Causes:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
                         ...(_selectedCodeData!['causes'] as List<String>).map((cause) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2.0),
